@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hand-Controlled Portfolio</title>
+<style>
+  :root{
+    --bg: #05060a;
+    --ink: #eef1f3;
+    --muted: #8b93a1;
+    --accent: #00ffcc;
+    --accent-dim: #0a3b33;
+    --card: #0d1016;
+  }
+  *{ box-sizing: border-box; }
+  html,body{
+    margin:0; padding:0; background:var(--bg); color:var(--ink);
+    font-family: -apple-system, "Segoe UI", Inter, sans-serif;
+  }
+  body.hand-active{ cursor: none; } /* only hide real cursor once hand tracking is live */
+
+  /* ---------- Hand cursor + webcam UI ---------- */
+  #hand-cursor{
+    position: fixed; top:0; left:0; width:26px; height:26px;
+    border-radius:50%;
+    border: 2px solid var(--accent);
+    background: rgba(0,255,204,0.15);
+    pointer-events:none;
+    transform: translate(-50%,-50%);
+    z-index: 9999;
+    transition: width .12s ease, height .12s ease, background .12s ease;
+    box-shadow: 0 0 18px rgba(0,255,204,.45);
+    display: none;
+  }
+  #hand-cursor.visible{ display: block; }
+  #hand-cursor.pinching{
+    width:14px; height:14px;
+    background: var(--accent);
+  }
+  #webcam{
+    position:fixed; bottom:20px; right:20px; width:180px; height:135px;
+    z-index: 999; border-radius:10px; opacity:.55; transform: scaleX(-1);
+    border:1px solid rgba(0,255,204,.4); object-fit:cover;
+  }
+  #hand-status{
+    position:fixed; bottom:20px; left:20px; z-index:999;
+    font-size:12px; color: var(--muted);
+    background: rgba(255,255,255,.04); padding:8px 12px; border-radius:8px;
+    border:1px solid rgba(255,255,255,.08);
+  }
+  #hand-status b{ color: var(--accent); }
+  #loading{
+    position:fixed; inset:0; display:flex; align-items:center; justify-content:center;
+    background:var(--bg); color:var(--accent); font-size:18px; z-index: 10000;
+    letter-spacing:.02em;
+  }
+  #loading.hidden{ display:none; }
+  #enable-hand{
+    position:fixed; top:20px; right:20px; z-index:999;
+    background: var(--accent-dim); color:var(--accent); border:1px solid var(--accent);
+    padding:10px 16px; border-radius:8px; font-size:13px; cursor:pointer;
+  }
+
+  /* ---------- Portfolio content ---------- */
+  header.hero{
+    min-height:100vh; display:flex; flex-direction:column; justify-content:center;
+    padding: 8vw; border-bottom:1px solid rgba(255,255,255,.06);
+  }
+  header.hero p.kicker{ color:var(--accent); margin:0 0 12px; font-size:14px; }
+  header.hero h1{ font-size: clamp(36px,7vw,84px); line-height:1.02; margin:0 0 20px; max-width:14ch; }
+  header.hero p.sub{ color:var(--muted); max-width:52ch; font-size:18px; line-height:1.6; }
+
+  section{ padding: 8vw; border-bottom:1px solid rgba(255,255,255,.06); min-height:70vh; }
+  section h2{ font-size: clamp(26px,4vw,42px); margin:0 0 40px; max-width:16ch; }
+
+  .grid{ display:grid; grid-template-columns: repeat(auto-fit,minmax(260px,1fr)); gap:24px; }
+  .card{
+    background:var(--card); border:1px solid rgba(255,255,255,.08); border-radius:14px;
+    padding:28px; cursor:pointer; transition: border-color .15s ease, transform .15s ease;
+  }
+  .card:hover, .card.hand-hover{ border-color: var(--accent); transform: translateY(-2px); }
+  .card h3{ margin:0 0 10px; font-size:20px; }
+  .card p{ color:var(--muted); font-size:15px; line-height:1.55; margin:0; }
+
+  footer{ padding:8vw; color:var(--muted); font-size:14px; }
+  footer a{ color:var(--accent); text-decoration:none; }
+
+  @media (prefers-reduced-motion: reduce){
+    #hand-cursor{ transition:none; }
+  }
+</style>
+</head>
+<body>
+
+  <div id="loading" class="hidden">Starting camera &amp; hand tracking…</div>
+  <button id="enable-hand">Enable hand control</button>
+  <div id="hand-status">Hand control: <b id="hand-state">off</b></div>
+  <video id="webcam" autoplay playsinline muted></video>
+  <div id="hand-cursor"></div>
+
+  <header class="hero">
+    <p class="kicker">Portfolio</p>
+    <h1>Hi, I build things that respond&nbsp;to&nbsp;you.</h1>
+    <p class="sub">Move your open hand up and down in front of the camera to scroll this page.
+      Pinch your thumb and index finger together over a project card to "click" it — no mouse needed.</p>
+  </header>
+
+  <section id="projects">
+    <h2>Selected projects</h2>
+    <div class="grid">
+      <div class="card" data-link="#">
+        <h3>Gesture Particle System</h3>
+        <p>15,000 particles morphing between shapes, driven live by webcam hand tracking with MediaPipe + Three.js.</p>
+      </div>
+      <div class="card" data-link="#">
+        <h3>Hand-Controlled UI Kit</h3>
+        <p>A reusable set of hooks for pinch-to-click and hand-position scrolling, used across this site.</p>
+      </div>
+      <div class="card" data-link="#">
+        <h3>Realtime WebGL Playground</h3>
+        <p>Shader experiments exploring motion, light and depth in the browser.</p>
+      </div>
+      <div class="card" data-link="#">
+        <h3>Computer Vision Toys</h3>
+        <p>Small browser experiments built on top of on-device ML models — no server round trip.</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="about">
+    <h2>About</h2>
+    <p class="sub" style="color:var(--muted); max-width:60ch; font-size:17px; line-height:1.7;">
+      I'm a frontend developer focused on interactive, camera- and sensor-driven interfaces.
+      This page is itself a demo: everything you're scrolling through right now can be
+      navigated entirely with your hand.
+    </p>
+  </section>
+
+  <footer>
+    <p>Reach me at <a href="#">hello@example.com</a></p>
+  </footer>
+
+  <script type="importmap">
+  {
+    "imports": {
+      "@mediapipe/tasks-vision": "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.8/+esm"
+    }
+  }
+  </script>
+
+  <script type="module">
+    import { FilesetResolver, HandLandmarker } from '@mediapipe/tasks-vision';
+
+    const loadingEl   = document.getElementById('loading');
+    const enableBtn   = document.getElementById('enable-hand');
+    const statusEl    = document.getElementById('hand-state');
+    const video       = document.getElementById('webcam');
+    const cursorEl    = document.getElementById('hand-cursor');
+
+    let handLandmarker;
+    let handEnabled = false;
+    let isHandDetected = false;
+    let lastVideoTime = -1;
+
+    // Smoothed cursor position (screen pixels)
+    let cursorX = window.innerWidth / 2;
+    let cursorY = window.innerHeight / 2;
+
+    // Smoothed target scroll fraction (0 = top of page, 1 = bottom)
+    let scrollFraction = 0;
+
+    // Pinch state, for click-once-per-pinch
+    let isPinching = false;
+    let lastPinchState = false;
+    let lastHoverCard = null;
+
+    enableBtn.addEventListener('click', () => {
+      if (!handEnabled) startHandControl();
+    });
+
+    async function startHandControl() {
+      try {
+        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+          throw new Error('Camera access needs HTTPS (or localhost). This page must be served, not opened as a local file:// path.');
+        }
+
+        loadingEl.classList.remove('hidden');
+        loadingEl.textContent = 'Loading hand-tracking model…';
+        enableBtn.textContent = 'Loading model…';
+        enableBtn.disabled = true;
+
+        const vision = await FilesetResolver.forVisionTasks(
+          "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.8/wasm"
+        );
+
+        handLandmarker = await HandLandmarker.createFromOptions(vision, {
+          baseOptions: {
+            modelAssetPath: "https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task",
+            delegate: "GPU"
+          },
+          runningMode: "VIDEO",
+          numHands: 1
+        });
+
+        loadingEl.textContent = 'Requesting camera access…';
+        const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+        video.srcObject = stream;
+
+        video.addEventListener("loadeddata", () => {
+          loadingEl.classList.add('hidden');
+          handEnabled = true;
+          document.body.classList.add('hand-active');
+          cursorEl.classList.add('visible');
+          enableBtn.style.display = 'none';
+          statusEl.textContent = 'searching…';
+          predictWebcam();
+        }, { once: true });
+
+      } catch (err) {
+        console.error('Hand control failed to start:', err);
+        loadingEl.classList.add('hidden');
+        enableBtn.disabled = false;
+        enableBtn.textContent = 'Enable hand control';
+        statusEl.textContent = 'error — see below';
+        statusEl.title = err.message;
+        alert('Could not start hand control:\n\n' + err.message);
+      }
+    }
+
+    function predictWebcam() {
+      if (handLandmarker && video.currentTime !== lastVideoTime) {
+        lastVideoTime = video.currentTime;
+        const results = handLandmarker.detectForVideo(video, performance.now());
+
+        if (results.landmarks.length > 0) {
+          isHandDetected = true;
+          statusEl.textContent = 'tracking';
+          const landmarks = results.landmarks[0];
+          const indexTip = landmarks[8];
+          const thumbTip = landmarks[4];
+
+          // --- Cursor position ---
+          // Video is mirrored via CSS (scaleX(-1)) for a natural "mirror" feel,
+          // so invert X to match what the user sees.
+          const targetCursorX = (1 - indexTip.x) * window.innerWidth;
+          const targetCursorY = indexTip.y * window.innerHeight;
+          cursorX += (targetCursorX - cursorX) * 0.25;
+          cursorY += (targetCursorY - cursorY) * 0.25;
+
+          // --- Scroll position ---
+          // Map hand's vertical position directly to how far down the page is scrolled.
+          // Use a comfortable working band (0.15–0.85 of frame height) instead of the
+          // full frame, since reaching the very top/bottom edge of camera view is awkward.
+          const band = mapClamp(indexTip.y, 0.15, 0.85, 0, 1);
+          scrollFraction += (band - scrollFraction) * 0.08;
+          const maxScroll = document.documentElement.scrollHeight - window.innerHeight;
+          window.scrollTo(0, scrollFraction * maxScroll);
+
+          // --- Pinch detection ---
+          const dx = thumbTip.x - indexTip.x;
+          const dy = thumbTip.y - indexTip.y;
+          const pinchDist = Math.sqrt(dx * dx + dy * dy);
+          isPinching = pinchDist < 0.045;
+
+          cursorEl.classList.toggle('pinching', isPinching);
+
+          // Hover highlight under cursor
+          const hovered = document.elementFromPoint(cursorX, cursorY);
+          const hoverCard = hovered ? hovered.closest('.card') : null;
+          if (hoverCard !== lastHoverCard) {
+            if (lastHoverCard) lastHoverCard.classList.remove('hand-hover');
+            if (hoverCard) hoverCard.classList.add('hand-hover');
+            lastHoverCard = hoverCard;
+          }
+
+          // Trigger a click on rising edge of pinch (like the fist-trigger in the
+          // particle demo — one action per gesture, not every frame)
+          if (isPinching && !lastPinchState && hoverCard) {
+            hoverCard.click();
+          }
+          lastPinchState = isPinching;
+
+        } else {
+          isHandDetected = false;
+          statusEl.textContent = 'no hand found';
+        }
+      }
+      requestAnimationFrame(predictWebcam);
+    }
+
+    function mapClamp(value, inMin, inMax, outMin, outMax) {
+      const t = (value - inMin) / (inMax - inMin);
+      const clamped = Math.min(1, Math.max(0, t));
+      return outMin + clamped * (outMax - outMin);
+    }
+
+    // Cursor render loop (kept separate from detection loop for smoothness)
+    function renderCursor() {
+      cursorEl.style.left = cursorX + 'px';
+      cursorEl.style.top = cursorY + 'px';
+      requestAnimationFrame(renderCursor);
+    }
+    renderCursor();
+
+    // Sample click behaviour for cards
+    document.querySelectorAll('.card').forEach(card => {
+      card.addEventListener('click', () => {
+        card.style.borderColor = 'var(--accent)';
+        setTimeout(() => { if (card !== lastHoverCard) card.style.borderColor = ''; }, 300);
+      });
+    });
+  </script>
+</body>
+</html>
