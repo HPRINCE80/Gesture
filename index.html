@@ -1,10 +1,77 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gesture Controlled 3D Particles</title>
+    <title>Gesture Controlled 3D Particles - Interactive Hand Tracking | Prince Yaduvanshi</title>
     <meta name="google-site-verification" content="YE69QrIQnKVS0L74Hk0idJcOjqwP6Iqext5HsXphprc" />
+    
+    <!-- SEO Meta Tags -->
+    <meta name="description" content="Interactive 3D particle system controlled by hand gestures using AI hand tracking. Morph between shapes - hearts, Saturn, flowers, torus with hand movements and pinch gestures using MediaPipe and Three.js.">
+    <meta name="keywords" content="3D particles, hand tracking, gesture control, AI, Three.js, MediaPipe, interactive visualization, 3D shapes, animation, web development, creative coding">
+    <meta name="author" content="Prince Yaduvanshi">
+    <meta name="robots" content="index, follow">
+    <meta name="language" content="English">
+    <meta name="revisit-after" content="7 days">
+    <link rel="canonical" href="https://github.com/HPRINCE80/gesture-3d-particles">
+    
+    <!-- Open Graph Tags (Social Media) -->
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="Gesture Controlled 3D Particles - Interactive Hand Tracking">
+    <meta property="og:description" content="Control stunning 3D particle animations with hand gestures using AI-powered hand tracking. Morph between different shapes and colors in real-time.">
+    <meta property="og:image" content="https://avatars.githubusercontent.com/u/HPRINCE80">
+    <meta property="og:url" content="https://github.com/HPRINCE80">
+    <meta property="og:site_name" content="Prince Yaduvanshi - Full Stack Developer">
+    
+    <!-- Twitter Card Tags -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Gesture Controlled 3D Particles - Interactive Hand Tracking">
+    <meta name="twitter:description" content="Control 3D particle animations with hand gestures using AI hand tracking. Morph between heart, Saturn, flower shapes.">
+    <meta name="twitter:creator" content="@PrinceYaduvansh">
+    
+    <!-- Additional Meta Tags -->
+    <meta name="theme-color" content="#000000">
+    <meta name="msapplication-TileColor" content="#000000">
+    <meta name="application-name" content="3D Gesture Particles">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
+    <link rel="icon" type="image/png" href="./investment.png">
+    <link rel="apple-touch-icon" href="./investment.png">
+    <link rel="manifest" href="manifest.json">
+    
+    <!-- Performance & Security -->
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="format-detection" content="telephone=no">
+    <meta name="referrer" content="strict-origin-when-cross-origin">
+    
+    <!-- Preload Critical Resources -->
+    <link rel="preconnect" href="https://cdn.jsdelivr.net">
+    <link rel="preconnect" href="https://storage.googleapis.com">
+    <link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
+    
+    <!-- Structured Data (JSON-LD) -->
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "WebApplication",
+        "name": "Gesture Controlled 3D Particles",
+        "description": "Interactive 3D particle system controlled by hand gestures using AI hand tracking",
+        "url": "https://github.com/HPRINCE80/gesture-3d-particles",
+        "creator": {
+            "@type": "Person",
+            "name": "Prince Yaduvanshi",
+            "url": "https://github.com/HPRINCE80"
+        },
+        "applicationCategory": "Multimedia",
+        "offers": {
+            "@type": "Offer",
+            "price": "0",
+            "priceCurrency": "USD"
+        }
+    }
+    </script>
+
     <style>
         body { margin: 0; overflow: hidden; background: #000; font-family: sans-serif; }
         #canvas-container { width: 100vw; height: 100vh; position: absolute; top: 0; left: 0; z-index: 1; }
@@ -13,14 +80,15 @@
         #instructions { position: absolute; top: 20px; left: 20px; color: white; z-index: 2; pointer-events: none; background: rgba(0,0,0,0.5); padding: 15px; border-radius: 8px; }
         .hidden { display: none; }
     </style>
+    
     <!-- Import Maps for clean module loading -->
     <script type="importmap">
-        {
-            "imports": {
-                "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
-                "@mediapipe/tasks-vision": "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.8/+esm"
-            }
+    {
+        "imports": {
+            "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+            "@mediapipe/tasks-vision": "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.8/+esm"
         }
+    }
     </script>
 </head>
 <body>
